@@ -20,8 +20,16 @@ app.listen(PORT, () => console.log(`Listening on ${ PORT }`))
 
 app.get('/',(req,res)=>{
     let tokens = [];
+    let emailErrs = [];
     if(req.query.email)
-        console.log(req.query.email+"; "+admin.auth().getUserByEmail(req.query.email))
+    admin.auth().getUserByEmail(req.query.email).then((userRecord)=>{
+        console.log(req.query.email)
+        console.log(userRecord.toJSON())
+    }).catch((err)=>{
+        console.log(err);
+        emailErrs.push();
+    })
+        
     
     req.query.emails
     res.json({'# of notifications sent':tokens.length,});
