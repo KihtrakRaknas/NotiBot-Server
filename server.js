@@ -21,10 +21,10 @@ app.listen(PORT, () => console.log(`Listening on ${ PORT }`))
 app.get('/',(req,res)=>{
     let tokens = [];
     if(req.query.email)
-        console.log(admin.auth().getUserByEmail(req.query.email))
+        console.log(req.query.email+"; "+admin.auth().getUserByEmail(req.query.email))
     
     req.query.emails
-    res.send('Hello World!');
+    res.json({'# of notifications sent':tokens.length,});
 });
 
 db.collection("cities").doc("SF").get().then(function(doc) {
