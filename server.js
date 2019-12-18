@@ -19,10 +19,15 @@ var app=express();
 app.listen(PORT, () => console.log(`Listening on ${ PORT }`))
 
 app.get('/',(req,res)=>{
+    let tokens = [];
+    if(req.query.email)
+        console.log(admin.auth().getUserByEmail(req.query.email))
+    
+    req.query.emails
     res.send('Hello World!');
 });
 
-  db.collection("cities").doc("SF").get().then(function(doc) {
+db.collection("cities").doc("SF").get().then(function(doc) {
     if (doc.exists) {
         console.log("Document data:", doc.data());
     } else {
