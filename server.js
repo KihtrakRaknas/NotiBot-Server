@@ -62,6 +62,7 @@ app.get('/',async (req,res)=>{
       messages.push({
         to: token,
         sound: 'default',
+        title: req.query.title,
         body: req.query.body,
         data: { withSome: 'data' },
       })
