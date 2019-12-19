@@ -57,7 +57,7 @@ app.get('/',async (req,res)=>{
     
       // Construct a message (see https://docs.expo.io/versions/latest/guides/push-notifications.html)
       messages.push({
-        to: pushToken,
+        to: token,
         sound: 'default',
         body: req.query.body,
         data: { withSome: 'data' },
