@@ -1,4 +1,4 @@
-import Expo from 'expo-server-sdk';
+const { Expo } = require('expo-server-sdk')
 var admin = require('firebase-admin');
 const express = require('express');
 const PORT = process.env.PORT || 5000
