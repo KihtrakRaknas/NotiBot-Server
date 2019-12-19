@@ -18,29 +18,31 @@ let db = admin.firestore();
 var app=express();
 app.listen(PORT, () => console.log(`Listening on ${ PORT }`))
 
-app.get('/',(req,res)=>{
+app.get('/',async (req,res)=>{
     let tokens = [];
     let emailErrs = [];
     if(req.query.email)
-        admin.auth().getUserByEmail(req.query.email).then((userRecord)=>{
+        await admin.auth().getUserByEmail(req.query.email).then((userRecord)=>{
             console.log(userRecord.uid)
+            return await db.collection("Users").doc(userRecord.uid).get().then(function(doc) {
+                if (doc.exists) {
+                    console.log("Tokens:", doc.data()["Push Tokens"]);
+                    if(doc.data()["Push Tokens"])
+                        tokens.push(doc.data()["Push Tokens"])
+                    else
+                        emailErrs.push(req.query.email);
+                } else {
+                    // doc.data() will be undefined in this case
+                    console.log("No such document!");
+                }
+            }).catch(function(error) {
+                console.log("Error getting document:", error);
+                emailErrs.push(req.query.email);
+            });
         }).catch((err)=>{
             console.log(err);
             emailErrs.push(req.query.email);
         })
-        
     
-    req.query.emails
     res.json({'# of notifications sent':tokens.length,"# of errors":emailErrs.length,"Failed Emails":emailErrs});
-});
-
-db.collection("cities").doc("SF").get().then(function(doc) {
-    if (doc.exists) {
-        console.log("Document data:", doc.data());
-    } else {
-        // doc.data() will be undefined in this case
-        console.log("No such document!");
-    }
-}).catch(function(error) {
-    console.log("Error getting document:", error);
 });
