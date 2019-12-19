@@ -51,6 +51,7 @@ app.get('/',async (req,res)=>{
     let messages = [];
     for(token of tokens){
         console.log(Expo.isExpoPushToken(token))
+        console.log(token)
         if (!await Expo.isExpoPushToken(token)) {
             tokenErrs.push(`${token} is not a valid push token`)
             console.log(`Push token ${token} is not a valid Expo push token`);
