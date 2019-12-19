@@ -84,5 +84,5 @@ app.get('/',async (req,res)=>{
         }
     }
 
-    res.json({'# of notifications sent':tokens.length,"# of errors":emailErrs.length,"Failed Emails":emailErrs});
+    res.json({'# of notifications sent':tokens.length,"# of errors":emailErrs.length,"Failed Emails":emailErrs,"Non-existant tokens":tokenErrs.length});
 });
