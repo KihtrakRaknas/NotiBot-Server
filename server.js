@@ -32,7 +32,7 @@ app.get('/',async (req,res)=>{
                 if (doc.exists) {
                     console.log("Tokens:", doc.data()["Push Tokens"]);
                     if(doc.data()["Push Tokens"])
-                        tokens.push(doc.data()["Push Tokens"])
+                        tokens = tokens.concat(doc.data()["Push Tokens"])
                     else
                         emailErrs.push(req.query.email+" has no devices connected to it");
                 } else {
