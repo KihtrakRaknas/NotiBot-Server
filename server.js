@@ -49,9 +49,9 @@ app.get('/',async (req,res)=>{
             emailErrs.push(req.query.email+" is not a valid email");
         })
     for(token of tokens){
-        if (!Expo.isExpoPushToken(pushToken)) {
-            tokenErrs.push(`${pushToken} is not a valid push token`)
-            console.log(`Push token ${pushToken} is not a valid Expo push token`);
+        if (!Expo.isExpoPushToken(token)) {
+            tokenErrs.push(`${token} is not a valid push token`)
+            console.log(`Push token ${token} is not a valid Expo push token`);
             continue;
         }
     
