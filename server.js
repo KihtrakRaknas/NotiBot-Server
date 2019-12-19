@@ -22,17 +22,16 @@ app.get('/',(req,res)=>{
     let tokens = [];
     let emailErrs = [];
     if(req.query.email)
-    admin.auth().getUserByEmail(req.query.email).then((userRecord)=>{
-        console.log(req.query.email)
-        console.log(userRecord.toJSON())
-    }).catch((err)=>{
-        console.log(err);
-        emailErrs.push();
-    })
+        admin.auth().getUserByEmail(req.query.email).then((userRecord)=>{
+            console.log(userRecord.uid)
+        }).catch((err)=>{
+            console.log(err);
+            emailErrs.push(req.query.email);
+        })
         
     
     req.query.emails
-    res.json({'# of notifications sent':tokens.length,});
+    res.json({'# of notifications sent':tokens.length,"# of errors":emailErrs.length,"Failed Emails":emailErrs});
 });
 
 db.collection("cities").doc("SF").get().then(function(doc) {
