@@ -22,9 +22,9 @@ app.get('/',async (req,res)=>{
     let tokens = [];
     let emailErrs = [];
     if(req.query.email)
-        await admin.auth().getUserByEmail(req.query.email).then((userRecord)=>{
+        await admin.auth().getUserByEmail(req.query.email).then(async(userRecord)=>{
             console.log(userRecord.uid)
-            return await db.collection("Users").doc(userRecord.uid).get().then(function(doc) {
+            return await db.collection("Users").doc(userRecord.uid).get().then(function (doc) {
                 if (doc.exists) {
                     console.log("Tokens:", doc.data()["Push Tokens"]);
                     if(doc.data()["Push Tokens"])
