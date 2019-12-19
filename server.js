@@ -50,7 +50,7 @@ app.get('/',async (req,res)=>{
         })
     let messages = [];
     for(token of tokens){
-        if (!Expo.isExpoPushToken(token)) {
+        if (!await Expo.isExpoPushToken(token)) {
             tokenErrs.push(`${token} is not a valid push token`)
             console.log(`Push token ${token} is not a valid Expo push token`);
             continue;
@@ -65,7 +65,7 @@ app.get('/',async (req,res)=>{
       })
     }
 
-    let chunks = expo.chunkPushNotifications(messages);
+    let chunks = await expo.chunkPushNotifications(messages);
     let tickets = [];
     // Send the chunks to the Expo push notification service. There are
     // different strategies you could use. A simple one is to send one chunk at a
