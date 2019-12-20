@@ -58,14 +58,25 @@ let respondToRequest = async (req,res)=>{
         }
     
       // Construct a message (see https://docs.expo.io/versions/latest/guides/push-notifications.html)
+     let data = {}
+    if(req.query.data&&JSON.parse(req.query.data))
+        data = JSON.parse(req.query.data)
+    else
+        data = req.body
+    
+    let title = req.query.title
+    if(!title)
+        title = req.query.project
+    if(!title)
+        title = req.query.email
 
       var msgObj = {
         to: token,
         sound: 'default',
-        title: req.query.title,
+        title: title,
         priority: 'high',
         body: req.query.body,
-        data: { withSome: 'data' },
+        data: {data, project},
       }
       messages.push(msgObj)
 
