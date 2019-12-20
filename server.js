@@ -24,16 +24,13 @@ var app=express();
 app.listen(PORT, () => console.log(`Listening on ${ PORT }`))
 
 let respondToRequest = async (req,res)=>{
-    console.log("REQ")
     let tokens = [];
     let emailErrs = [];
     let tokenErrs = []; 
     if(req.query.email)
         await admin.auth().getUserByEmail(req.query.email).then(async(userRecord)=>{
-            console.log(userRecord.uid)
             return await db.collection("Users").doc(userRecord.uid).get().then(function (doc) {
                 if (doc.exists) {
-                    console.log("Tokens:", doc.data()["Push Tokens"]);
                     if(doc.data()["Push Tokens"])
                         tokens = tokens.concat(doc.data()["Push Tokens"])
                     else
@@ -53,8 +50,6 @@ let respondToRequest = async (req,res)=>{
         })
     let messages = [];
     for(token of tokens){
-        console.log(Expo.isExpoPushToken(token))
-        console.log(token)
         if (!await Expo.isExpoPushToken(token)) {
             tokenErrs.push(`${token} is not a valid push token`)
             console.log(`Push token ${token} is not a valid Expo push token`);
@@ -73,7 +68,7 @@ let respondToRequest = async (req,res)=>{
       }
       messages.push(msgObj)
 
-      console.log(msgObj)
+      //console.log(msgObj)
     }
     let chunks = await expo.chunkPushNotifications(messages);
     let tickets = [];
@@ -83,7 +78,6 @@ let respondToRequest = async (req,res)=>{
     for (let chunk of chunks) {
         try {
             let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-            console.log(ticketChunk);
             tickets.push(...ticketChunk);
             // NOTE: If a ticket contains an error code in ticket.details.error, you
             // must handle it appropriately. The error codes are listed in the Expo
@@ -114,11 +108,9 @@ let respondToRequest = async (req,res)=>{
     while(tokens.length != total||loops>60){
         loops++
         for (let chunk of receiptIdChunks) {
-            console.log(chunk);
             try {
                 let receipts = await expo.getPushNotificationReceiptsAsync(chunk);
-                console.log(receipts);
-            
+
                 // The receipts specify whether Apple or Google successfully received the
                 // notification and information about an error, if one occurred.
                 if(receipts)
@@ -144,7 +136,6 @@ let respondToRequest = async (req,res)=>{
             console.error(error);
             }
         }
-        console.log(tokens.length+" == "+total)
         if(tokens.length != total)
             await sleep(1000)
     }
