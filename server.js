@@ -114,6 +114,7 @@ let respondToRequest = async (req,res)=>{
     while(tokens.length != total||loops>60){
         loops++
         for (let chunk of receiptIdChunks) {
+            console.log(chunk);
             try {
                 let receipts = await expo.getPushNotificationReceiptsAsync(chunk);
                 console.log(receipts);
