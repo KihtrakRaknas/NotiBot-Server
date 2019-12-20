@@ -66,6 +66,14 @@ app.get('/',async (req,res)=>{
         body: req.query.body,
         data: { withSome: 'data' },
       })
+
+      console.log({
+        to: token,
+        sound: 'default',
+        title: req.query.title,
+        body: req.query.body,
+        data: { withSome: 'data' },
+      })
     }
 
     let chunks = await expo.chunkPushNotifications(messages);
