@@ -51,7 +51,7 @@ let respondToRequest = async (req,res)=>{
         })
 
     if(req.query.project)
-        await db.collection("Projects").doc(req.query.project.toLowerCase()).get().then(function (doc) {
+        await db.collection("Projects").doc(req.query.project.toLowerCase()).get().then(async(doc) =>{
             if (doc.exists) {
                 if(doc.data()["Subscribers"])
                     for(uid of doc.data()["Subscribers"])
