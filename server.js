@@ -24,6 +24,7 @@ app.use(bodyParser);
 app.listen(PORT, () => console.log(`Listening on ${ PORT }`))
 
 let respondToRequest = async (req,res)=>{
+    console.log("REQ")
     let tokens = [];
     let emailErrs = [];
     let tokenErrs = []; 
