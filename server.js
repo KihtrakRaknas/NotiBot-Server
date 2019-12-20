@@ -108,37 +108,50 @@ let respondToRequest = async (req,res)=>{
     let receiptIdChunks = await expo.chunkPushNotificationReceiptIds(receiptIds);
 
     let success = 0
+    let total = 0;
+    let loops = 0
 
-    for (let chunk of receiptIdChunks) {
-        try {
-          let receipts = await expo.getPushNotificationReceiptsAsync(chunk);
-          console.log(receipts);
-    
-          // The receipts specify whether Apple or Google successfully received the
-          // notification and information about an error, if one occurred.
-          for (let receipt of receipts) {
-            if (receipt.status === 'ok') {
-                success++
-                continue;
-            } else if (receipt.status === 'error') {
-              console.error(`There was an error sending a notification: ${receipt.message}`);
-              if (receipt.details && receipt.details.error) {
-                // The error codes are listed in the Expo documentation:
-                // https://docs.expo.io/versions/latest/guides/push-notifications#response-format
-                // You must handle the errors appropriately.
-                console.error(`The error code is ${receipt.details.error}`);
-                deliveryErrs.push(`${receipt.details.error} - ${receipt.message}`)
-              }
+    while(tokens.length != total||loops>60){
+        loops++
+        for (let chunk of receiptIdChunks) {
+            try {
+            let receipts = await expo.getPushNotificationReceiptsAsync(chunk);
+            console.log(receipts);
+        
+            // The receipts specify whether Apple or Google successfully received the
+            // notification and information about an error, if one occurred.
+            for (let receipt of receipts) {
+                total++;
+
+                if (receipt.status === 'ok') {
+                    success++
+                    continue;
+                } else if (receipt.status === 'error') {
+                console.error(`There was an error sending a notification: ${receipt.message}`);
+                if (receipt.details && receipt.details.error) {
+                    // The error codes are listed in the Expo documentation:
+                    // https://docs.expo.io/versions/latest/guides/push-notifications#response-format
+                    // You must handle the errors appropriately.
+                    console.error(`The error code is ${receipt.details.error}`);
+                    deliveryErrs.push(`${receipt.details.error} - ${receipt.message}`)
+                }
+                }
             }
-          }
-        } catch (error) {
-          console.error(error);
+            } catch (error) {
+            console.error(error);
+            }
         }
+        if(tokens.length != total)
+            await sleep(1000)
     }
 
 
-    res.json({'# of notifications sent':success,"# of errors":emailErrs.length+tokenErrs.length+deliveryErrs.length,"Failed Emails":emailErrs,"Non-existant tokens":tokenErrs.length,"Delivery Errors":deliveryErrs});
+    res.json({'# of notifications requested to be sent':tokens.length,'# of notifications sent':success,"# of errors":emailErrs.length+tokenErrs.length+deliveryErrs.length,"Failed Emails":emailErrs,"Non-existant tokens":tokenErrs.length,"Delivery Errors":deliveryErrs});
 }
 
 app.get('/',respondToRequest);
 app.post('/',respondToRequest);
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
