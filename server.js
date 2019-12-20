@@ -120,7 +120,7 @@ let respondToRequest = async (req,res)=>{
             
                 // The receipts specify whether Apple or Google successfully received the
                 // notification and information about an error, if one occurred.
-                if(receipts.length != 0)
+                if(receipts)
                     for (let receipt of receipts) {
                         total++;
 
