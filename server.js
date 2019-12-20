@@ -112,7 +112,7 @@ let respondToRequest = async (req,res)=>{
         title: title,
         priority: 'high',
         body: req.query.body,
-        data: {data, project},
+        data: {data, project:req.query.project},
       }
       messages.push(msgObj)
 
