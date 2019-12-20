@@ -49,6 +49,40 @@ let respondToRequest = async (req,res)=>{
             console.log(err);
             emailErrs.push(req.query.email+" is not a valid email");
         })
+
+    if(req.query.project)
+        await db.collection("Projects").doc(req.query.project.toLowerCase()).get().then(function (doc) {
+            if (doc.exists) {
+                if(doc.data()["Subscribers"])
+                    for(uid of doc.data()["Subscribers"])
+                        await db.collection("Users").doc(uid).get().then(function (docUser) {
+                            if (docUser.exists) {
+                                if(docUser.data()["Push Tokens"])
+                                    tokens = tokens.concat(docUser.data()["Push Tokens"])
+                                else
+                                    emailErrs.push(req.query.project+" contains a subscriber that has no devices connected to it");
+                            } else {
+                                // doc.data() will be undefined in this case
+                                console.log("No such document!");
+                                emailErrs.push(req.query.project+" contains a subscriber that doesn't exist");
+                            }
+                        }).catch(function(error) {
+                            console.log("Error getting document:", error);
+                            emailErrs.push(req.query.project+" contains a subscriber that doesn't exist");
+                        });
+                else
+                    emailErrs.push(req.query.project+" has no accounts connected to it");
+            } else {
+                // doc.data() will be undefined in this case
+                console.log("No such document!");
+                emailErrs.push(req.query.project+" is not a valid project");
+            }
+        }).catch(function(error) {
+            console.log("Error getting document:", error);
+            emailErrs.push(req.query.project+" is not a valid project");
+        });
+
+
     let messages = [];
     for(token of tokens){
         if (!await Expo.isExpoPushToken(token)) {
@@ -153,7 +187,7 @@ let respondToRequest = async (req,res)=>{
     }
 
 
-    res.json({'# of notifications requested to be sent':tokens.length,'# of notifications sent':success,"# of errors":emailErrs.length+tokenErrs.length+deliveryErrs.length,"Failed Emails":emailErrs,"Non-existant tokens":tokenErrs.length,"Delivery Errors":deliveryErrs});
+    res.json({'# of notifications requested to be sent':tokens.length,'# of notifications sent':success,"# of errors":emailErrs.length+tokenErrs.length+deliveryErrs.length,"Failed Emails/Projects/Accounts":emailErrs,"Non-existant tokens":tokenErrs.length,"Delivery Errors":deliveryErrs});
 }
 
 app.get('/',respondToRequest);
