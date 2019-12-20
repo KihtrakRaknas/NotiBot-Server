@@ -103,7 +103,7 @@ app.get('/',async (req,res)=>{
 
     let receiptIds = [];
 
-    let receiptIdChunks = expo.chunkPushNotificationReceiptIds(receiptIds);
+    let receiptIdChunks = await expo.chunkPushNotificationReceiptIds(receiptIds);
 
     for (let chunk of receiptIdChunks) {
         try {
