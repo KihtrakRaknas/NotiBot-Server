@@ -91,6 +91,7 @@ app.get('/',async (req,res)=>{
         }
     }
 
+    let receiptIds = [];
     let deliveryErrs = [];
     
     for (let ticket of tickets) {
@@ -100,8 +101,6 @@ app.get('/',async (req,res)=>{
             receiptIds.push(ticket.id);
         }
     }
-
-    let receiptIds = [];
 
     let receiptIdChunks = await expo.chunkPushNotificationReceiptIds(receiptIds);
 
