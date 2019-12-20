@@ -23,9 +23,6 @@ var app=express();
 app.use(bodyParser);
 app.listen(PORT, () => console.log(`Listening on ${ PORT }`))
 
-app.get('/',respondToRequest);
-app.post('/',respondToRequest);
-
 let respondToRequest = async (req,res)=>{
     let tokens = [];
     let emailErrs = [];
@@ -141,3 +138,6 @@ let respondToRequest = async (req,res)=>{
 
     res.json({'# of notifications sent':success,"# of errors":emailErrs.length+tokenErrs.length+deliveryErrs.length,"Failed Emails":emailErrs,"Non-existant tokens":tokenErrs.length,"Delivery Errors":deliveryErrs});
 }
+
+app.get('/',respondToRequest);
+app.post('/',respondToRequest);
