@@ -20,7 +20,9 @@ admin.initializeApp({
 let db = admin.firestore();
 
 var app=express();
-app.use(bodyParser.urlencoded());
+app.use(bodyParser.urlencoded({
+    extended: true
+  }));
 app.use(bodyParser.json());
 app.listen(PORT, () => console.log(`Listening on ${ PORT }`))
 
