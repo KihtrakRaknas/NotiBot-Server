@@ -104,6 +104,8 @@ app.get('/',async (req,res)=>{
 
     let receiptIdChunks = await expo.chunkPushNotificationReceiptIds(receiptIds);
 
+    let success = 0
+
     for (let chunk of receiptIdChunks) {
         try {
           let receipts = await expo.getPushNotificationReceiptsAsync(chunk);
@@ -113,7 +115,8 @@ app.get('/',async (req,res)=>{
           // notification and information about an error, if one occurred.
           for (let receipt of receipts) {
             if (receipt.status === 'ok') {
-              continue;
+                success++
+                continue;
             } else if (receipt.status === 'error') {
               console.error(`There was an error sending a notification: ${receipt.message}`);
               if (receipt.details && receipt.details.error) {
@@ -131,5 +134,5 @@ app.get('/',async (req,res)=>{
     }
 
 
-    res.json({'# of notifications sent':tokens.length,"# of errors":emailErrs.length+tokenErrs.length+deliveryErrs.length,"Failed Emails":emailErrs,"Non-existant tokens":tokenErrs.length,"Delivery Errors":deliveryErrs});
+    res.json({'# of notifications sent':success,"# of errors":emailErrs.length+tokenErrs.length+deliveryErrs.length,"Failed Emails":emailErrs,"Non-existant tokens":tokenErrs.length,"Delivery Errors":deliveryErrs});
 });
