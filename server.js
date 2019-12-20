@@ -141,6 +141,7 @@ let respondToRequest = async (req,res)=>{
             console.error(error);
             }
         }
+        console.log(tokens.length+" == "+total)
         if(tokens.length != total)
             await sleep(1000)
     }
