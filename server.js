@@ -1,6 +1,7 @@
 const { Expo } = require('expo-server-sdk')
 var admin = require('firebase-admin');
 const express = require('express');
+const bodyParser = require('body-parser');
 const PORT = process.env.PORT || 5000
 var serviceAccount;
 
@@ -19,9 +20,13 @@ admin.initializeApp({
 let db = admin.firestore();
 
 var app=express();
+app.use(bodyParser);
 app.listen(PORT, () => console.log(`Listening on ${ PORT }`))
 
-app.get('/',async (req,res)=>{
+app.get('/',respondToRequest);
+app.post('/',respondToRequest);
+
+let respondToRequest = async (req,res)=>{
     let tokens = [];
     let emailErrs = [];
     let tokenErrs = []; 
@@ -135,4 +140,4 @@ app.get('/',async (req,res)=>{
 
 
     res.json({'# of notifications sent':success,"# of errors":emailErrs.length+tokenErrs.length+deliveryErrs.length,"Failed Emails":emailErrs,"Non-existant tokens":tokenErrs.length,"Delivery Errors":deliveryErrs});
-});
+}
