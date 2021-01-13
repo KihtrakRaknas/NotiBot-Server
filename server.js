@@ -200,6 +200,7 @@ let respondToRequest = async (req,res)=>{
 }
 
 app.post('/getProfileInfo', (req,res)=>{
+    console.log(`uid: ${req.body.uid}`)
     admin.auth().getUser(req.body.uid).then((userRecord) => {
         console.log(`Successfully fetched user data: ${userRecord.toJSON()}`);
         res.json(userRecord)
