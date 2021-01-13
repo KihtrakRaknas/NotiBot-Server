@@ -30,6 +30,19 @@ let respondToRequest = async (req,res)=>{
     let tokens = [];
     let emailErrs = [];
     let tokenErrs = []; 
+
+    let data = {}
+    if(req.query.data&&JSON.parse(req.query.data))
+        data = JSON.parse(req.query.data)
+    else
+        data = req.body
+    
+    let title = req.query.title
+    if(!title)
+        title = req.query.project
+    if(!title)
+        title = req.query.email
+
     if(req.query.email)
         await admin.auth().getUserByEmail(req.query.email).then(async(userRecord)=>{
             return await db.collection("Users").doc(userRecord.uid).get().then(function (doc) {
@@ -39,7 +52,6 @@ let respondToRequest = async (req,res)=>{
                     else
                         emailErrs.push(req.query.email+" has no devices connected to it");
                 } else {
-                    // doc.data() will be undefined in this case
                     console.log("No such document!");
                     emailErrs.push(req.query.email+" is not a valid email");
                 }
@@ -52,11 +64,20 @@ let respondToRequest = async (req,res)=>{
             emailErrs.push(req.query.email+" is not a valid email");
         })
 
-    if(req.query.project)
-        await db.collection("Projects").doc(req.query.project.toLowerCase()).get().then(async(doc) =>{
+    if(req.query.project){
+        const projectRef = db.collection("Projects").doc(req.query.project.toLowerCase())
+        await projectRef.get().then(async(doc) =>{
             if (doc.exists) {
+                projectRef.set({
+                    'Notifications':admin.firestore.FieldValue.arrayUnion({title,data,timestamp:new Date().getTime()})
+                }, { merge: true })
+                let pplToNotify = []
                 if(doc.data()["Subscribers"])
-                    for(uid of doc.data()["Subscribers"])
+                    pplToNotify = [...pplToNotify, ...doc.data()["Subscribers"]]
+                if(doc.data()["Owners"])
+                    pplToNotify =[...pplToNotify, ...doc.data()["Owners"]]
+                if(pplToNotify)
+                    for(uid of pplToNotify)
                         await db.collection("Users").doc(uid).get().then(function (docUser) {
                             if (docUser.exists) {
                                 if(docUser.data()["Push Tokens"])
@@ -64,7 +85,6 @@ let respondToRequest = async (req,res)=>{
                                 else
                                     emailErrs.push(req.query.project+" contains a subscriber that has no devices connected to it");
                             } else {
-                                // doc.data() will be undefined in this case
                                 console.log("No such document!");
                                 emailErrs.push(req.query.project+" contains a subscriber that doesn't exist");
                             }
@@ -75,7 +95,6 @@ let respondToRequest = async (req,res)=>{
                 else
                     emailErrs.push(req.query.project+" has no accounts connected to it");
             } else {
-                // doc.data() will be undefined in this case
                 console.log("No such document!");
                 emailErrs.push(req.query.project+" is not a valid project");
             }
@@ -83,7 +102,7 @@ let respondToRequest = async (req,res)=>{
             console.log("Error getting document:", error);
             emailErrs.push(req.query.project+" is not a valid project");
         });
-
+    }
 
     let messages = [];
     for(token of tokens){
@@ -94,29 +113,18 @@ let respondToRequest = async (req,res)=>{
         }
     
       // Construct a message (see https://docs.expo.io/versions/latest/guides/push-notifications.html)
-     let data = {}
-    if(req.query.data&&JSON.parse(req.query.data))
-        data = JSON.parse(req.query.data)
-    else
-        data = req.body
-    
-    let title = req.query.title
-    if(!title)
-        title = req.query.project
-    if(!title)
-        title = req.query.email
 
-      var msgObj = {
-        to: token,
-        sound: 'default',
-        title: title,
-        priority: 'high',
-        body: req.query.body,
-        data: {data, project:req.query.project},
-      }
-      messages.push(msgObj)
+        var msgObj = {
+            to: token,
+            sound: 'default',
+            title: title,
+            priority: 'high',
+            body: req.query.body,
+            data: {data, project:req.query.project},
+        }
+        messages.push(msgObj)
 
-      //console.log(msgObj)
+        //console.log(msgObj)
     }
     let chunks = await expo.chunkPushNotifications(messages);
     let tickets = [];
@@ -181,16 +189,24 @@ let respondToRequest = async (req,res)=>{
                         }
                     }
             } catch (error) {
-            console.error(error);
+                console.error(error);
             }
         }
-        if(tokens.length != total)
-            await sleep(1000)
+        // if(tokens.length != total)
+        //     await sleep(1000)
     }
-
 
     res.json({'# of notifications requested to be sent':tokens.length,'# of notifications sent':success,"# of errors":emailErrs.length+tokenErrs.length+deliveryErrs.length,"Failed Emails/Projects/Accounts":emailErrs,"Non-existant tokens":tokenErrs.length,"Delivery Errors":deliveryErrs});
 }
+
+app.post('/getProfileInfo', (req,res)=>{
+    admin.auth().getUser(req.body.uid).then((userRecord) => {
+        console.log(`Successfully fetched user data: ${userRecord.toJSON()}`);
+        res.json(userRecord)
+    }).catch((error) => {
+        res.status(400).json({ error: `Firebase couldn't find the user` })
+    });
+});
 
 app.get('/',respondToRequest);
 app.post('/',respondToRequest);
