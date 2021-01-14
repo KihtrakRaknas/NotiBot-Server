@@ -5,6 +5,13 @@ const bodyParser = require('body-parser');
 const PORT = process.env.PORT || 5000
 var serviceAccount;
 
+const cors = require('cors')
+
+const corsOptions = {
+  origin: 'https://yourdomain.com',
+  optionsSuccessStatus: 200
+}
+
 if(process.env.firebaseKey)
     serviceAccount = JSON.parse(process.env.firebaseKey)
 else
@@ -24,6 +31,7 @@ app.use(bodyParser.urlencoded({
     extended: true
   }));
 app.use(bodyParser.json());
+app.use(cors(corsOptions))
 app.listen(PORT, () => console.log(`Listening on ${ PORT }`))
 
 let respondToRequest = async (req,res)=>{
@@ -209,8 +217,8 @@ app.post('/getProfileInfo', (req,res)=>{
     });
 });
 
-app.get('/',respondToRequest);
-app.post('/',respondToRequest);
+app.get('/',cors(),respondToRequest);
+app.post('/',cors(),respondToRequest);
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
