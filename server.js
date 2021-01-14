@@ -8,7 +8,7 @@ var serviceAccount;
 const cors = require('cors')
 
 const corsOptions = {
-  origin: 'https://yourdomain.com',
+  origin: 'http://localhost:19006',
   optionsSuccessStatus: 200
 }
 
