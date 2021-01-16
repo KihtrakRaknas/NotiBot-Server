@@ -8,7 +8,7 @@ var serviceAccount;
 const cors = require('cors')
 
 const corsOptions = {
-  origin: 'http://localhost:19006',
+  origin: ['http://localhost:19006','https://notibot-server.herokuapp.com'],
   optionsSuccessStatus: 200
 }
 
@@ -29,7 +29,7 @@ let db = admin.firestore();
 var app=express();
 app.use(bodyParser.urlencoded({
     extended: true
-  }));
+}));
 app.use(bodyParser.json());
 app.use(cors(corsOptions))
 app.listen(PORT, () => console.log(`Listening on ${ PORT }`))
@@ -217,8 +217,8 @@ app.post('/getProfileInfo', (req,res)=>{
     });
 });
 
-app.get('/',cors(),respondToRequest);
-app.post('/',cors(),respondToRequest);
+app.get('/',cors({origin:true}),respondToRequest);
+app.post('/',cors({origin:true}),respondToRequest);
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
