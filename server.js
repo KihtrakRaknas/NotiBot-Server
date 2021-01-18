@@ -218,6 +218,18 @@ app.post('/getProfileInfo', (req,res)=>{
     });
 });
 
+app.post('/getByEmail', (req,res)=>{
+    console.log(`email: ${req.body.email}`)
+    admin.auth().getUserByEmail(req.body.email).then((userRecord) => {
+        console.log(`Successfully fetched user data: ${userRecord.toJSON()}`);
+        res.json(userRecord)
+    }).catch((error) => {
+        res.status(400).json({ error: `Firebase couldn't find the user` })
+    });
+});
+
+
+
 app.get('/',cors({origin:true}),respondToRequest);
 app.post('/',cors({origin:true}),respondToRequest);
 
