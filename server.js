@@ -19,6 +19,8 @@ else
 
 let expo = new Expo();
 
+const groups = ["Owner", "Manager", "Subscriber"]
+
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     databaseURL: "https://notibotapp.firebaseio.com"
@@ -81,11 +83,10 @@ let respondToRequest = async (req,res)=>{
                     'Notifications':admin.firestore.FieldValue.arrayUnion({title,data,timestamp:new Date().getTime()})
                 }, { merge: true })
                 let pplToNotify = []
-                if(doc.data()["Subscribers"])
-                    pplToNotify = [...pplToNotify, ...doc.data()["Subscribers"]]
-                if(doc.data()["Owners"])
-                    pplToNotify =[...pplToNotify, ...doc.data()["Owners"]]
-                if(pplToNotify)
+                for(let groupName of groups)
+                    if(doc.data()[groupName])
+                        pplToNotify = [...pplToNotify, ...doc.data()[groupName]]
+                if(pplToNotify.length>0)
                     for(uid of pplToNotify)
                         await db.collection("Users").doc(uid).get().then(function (docUser) {
                             if (docUser.exists) {
