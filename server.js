@@ -218,7 +218,7 @@ app.post('/getProfileInfo', (req,res)=>{
     });
 });
 
-app.post('/getByEmail', (req,res)=>{
+app.post('/getProfileByEmail', (req,res)=>{
     console.log(`email: ${req.body.email}`)
     admin.auth().getUserByEmail(req.body.email).then((userRecord) => {
         console.log(`Successfully fetched user data: ${userRecord.toJSON()}`);
