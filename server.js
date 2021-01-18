@@ -26,7 +26,7 @@ admin.initializeApp({
     databaseURL: "https://notibotapp.firebaseio.com"
 });
 
-let db = admin.firestore();
+const db = admin.firestore();
 
 var app=express();
 app.use(bodyParser.urlencoded({
@@ -87,7 +87,7 @@ let respondToRequest = async (req,res)=>{
                     if(doc.data()[groupName])
                         pplToNotify = [...pplToNotify, ...doc.data()[groupName]]
                 if(pplToNotify.length>0)
-                    for(uid of pplToNotify)
+                    for(let uid of pplToNotify)
                         await db.collection("Users").doc(uid).get().then(function (docUser) {
                             if (docUser.exists) {
                                 if(docUser.data()["Push Tokens"])
@@ -226,6 +226,32 @@ app.post('/getProfileByEmail', (req,res)=>{
         res.json(userRecord)
     }).catch((error) => {
         res.status(400).json({ error: `Firebase couldn't find the user` })
+    });
+});
+
+app.post('/deleteProject', (req,res)=>{
+    console.log(`data: ${req.body}`)
+    admin.auth().verifyIdToken(req.body.idToken).then((decodedToken) => {
+        const uid = decodedToken.uid;
+        const project = req.body.project;
+        db.collection("Projects").doc(req.body.project).get().then((doc) =>{
+            const deletedValue = doc.data()
+            if(deletedValue[groups[0]].includes(uid)){
+                const updates = []
+                for(let groupName of groups)
+                    if(deletedValue[groupName])
+                        for(let uid of deletedValue[groupName]){
+                            updates.push(db.collection('Users').doc(uid).update({
+                                'Projects':firebase.firestore.FieldValue.arrayRemove(context.params.projectName)
+                            }))
+                        }
+                Promise.all(updates).then(()=>res.json({status:success}))
+            }else{
+                res.status(400).json({ error: `Could not delete` })
+            }
+        })
+    }).catch((error) => {
+        res.status(400).json({ error: `Could not delete` })
     });
 });
 
