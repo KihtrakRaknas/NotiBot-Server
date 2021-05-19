@@ -131,9 +131,9 @@ let respondToRequest = async (req, res) => {
             sound: 'default',
             title: title,
             priority: 'high',
-            categoryId:"webhooktext",
+            categoryId:!req.query.webhook?"standard":req.query.webhookParam?"webhooktext":"webhookbutton",
             body: req.query.body,
-            data: { data, project: req.query.project, timestamp },
+            data: { data, project: req.query.project, timestamp, webhook:req.query.webhook, webhookParamName: req.query.webhookParam},
         }
         messages.push(msgObj)
 
