@@ -117,6 +117,7 @@ let respondToRequest = async (req, res) => {
     }
 
     let messages = [];
+    const category = !req.query.webhook?"standard":req.query.webhookParam?"webhooktext":"webhookbutton"
     for (token of tokens) {
         if (!await Expo.isExpoPushToken(token)) {
             tokenErrs.push(`${token} is not a valid push token`)
@@ -131,7 +132,9 @@ let respondToRequest = async (req, res) => {
             sound: 'default',
             title: title,
             priority: 'high',
-            categoryId:!req.query.webhook?"standard":req.query.webhookParam?"webhooktext":"webhookbutton",
+            categoryId:category,
+            categoryIdentifier:category,
+            _category:category,
             body: req.query.body,
             data: { data, project: req.query.project, timestamp, webhook:req.query.webhook, webhookParamName: req.query.webhookParam},
         }
