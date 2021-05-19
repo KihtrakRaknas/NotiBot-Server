@@ -131,7 +131,7 @@ let respondToRequest = async (req, res) => {
             sound: 'default',
             title: title,
             priority: 'high',
-            categoryId:"standard",
+            categoryId:"webhooktext",
             body: req.query.body,
             data: { data, project: req.query.project, timestamp },
         }
