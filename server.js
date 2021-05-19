@@ -82,7 +82,7 @@ let respondToRequest = async (req, res) => {
         await projectRef.get().then(async (doc) => {
             if (doc.exists) {
                 projectRef.set({
-                    'Notifications': admin.firestore.FieldValue.arrayUnion({ title, data, timestamp: timestamp })
+                    'Notifications': admin.firestore.FieldValue.arrayUnion({ title, data, timestamp: timestamp, ...(req.query.webhook && {webhook:req.query.webhook}), ...(req.query.webhookParam && {webhookParamName: req.query.webhookParam}) })
                 }, { merge: true })
                 let pplToNotify = []
                 for (let groupName of groups)
