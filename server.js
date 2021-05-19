@@ -8,11 +8,11 @@ var serviceAccount;
 const cors = require('cors')
 
 const corsOptions = {
-  origin: ['http://localhost:19006','https://notibot-server.herokuapp.com'],
-  optionsSuccessStatus: 200
+    origin: ['http://localhost:19006', 'https://notibot-server.herokuapp.com'],
+    optionsSuccessStatus: 200
 }
 
-if(process.env.firebaseKey)
+if (process.env.firebaseKey)
     serviceAccount = JSON.parse(process.env.firebaseKey)
 else
     serviceAccount = require("./secureContent/serviceAccountKey.json");
@@ -28,101 +28,103 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-var app=express();
+var app = express();
 app.use(bodyParser.urlencoded({
     extended: true
 }));
 app.use(bodyParser.json());
 app.use(cors(corsOptions))
-app.listen(PORT, () => console.log(`Listening on ${ PORT }`))
+app.listen(PORT, () => console.log(`Listening on ${PORT}`))
 app.use(express.static(__dirname + '/static', { dotfiles: 'allow' }))
 
-let respondToRequest = async (req,res)=>{
+let respondToRequest = async (req, res) => {
     let tokens = [];
     let emailErrs = [];
-    let tokenErrs = []; 
+    let tokenErrs = [];
 
     let data = {}
-    if(req.query.data&&JSON.parse(req.query.data))
+    if (req.query.data && JSON.parse(req.query.data))
         data = JSON.parse(req.query.data)
     else
         data = req.body
-    
+
     let title = req.query.title
-    if(!title)
+    if (!title)
         title = req.query.project
-    if(!title)
+    if (!title)
         title = req.query.email
 
-    if(req.query.email)
-        await admin.auth().getUserByEmail(req.query.email).then(async(userRecord)=>{
+    if (req.query.email)
+        await admin.auth().getUserByEmail(req.query.email).then(async (userRecord) => {
             return await db.collection("Users").doc(userRecord.uid).get().then(function (doc) {
                 if (doc.exists) {
-                    if(doc.data()["Push Tokens"])
+                    if (doc.data()["Push Tokens"])
                         tokens = tokens.concat(doc.data()["Push Tokens"])
                     else
-                        emailErrs.push(req.query.email+" has no devices connected to it");
+                        emailErrs.push(req.query.email + " has no devices connected to it");
                 } else {
                     console.log("No such document!");
-                    emailErrs.push(req.query.email+" is not a valid email");
+                    emailErrs.push(req.query.email + " is not a valid email");
                 }
-            }).catch(function(error) {
+            }).catch(function (error) {
                 console.log("Error getting document:", error);
-                emailErrs.push(req.query.email+" is not a valid email");
+                emailErrs.push(req.query.email + " is not a valid email");
             });
-        }).catch((err)=>{
+        }).catch((err) => {
             console.log(err);
-            emailErrs.push(req.query.email+" is not a valid email");
+            emailErrs.push(req.query.email + " is not a valid email");
         })
 
-    if(req.query.project){
+    const timestamp = new Date().getTime()
+
+    if (req.query.project) {
         const projectRef = db.collection("Projects").doc(req.query.project.toLowerCase())
-        await projectRef.get().then(async(doc) =>{
+        await projectRef.get().then(async (doc) => {
             if (doc.exists) {
                 projectRef.set({
-                    'Notifications':admin.firestore.FieldValue.arrayUnion({title,data,timestamp:new Date().getTime()})
+                    'Notifications': admin.firestore.FieldValue.arrayUnion({ title, data, timestamp: timestamp })
                 }, { merge: true })
                 let pplToNotify = []
-                for(let groupName of groups)
-                    if(doc.data()[groupName])
+                for (let groupName of groups)
+                    if (doc.data()[groupName])
                         pplToNotify = [...pplToNotify, ...doc.data()[groupName]]
-                if(pplToNotify.length>0)
-                    for(let uid of pplToNotify)
+                if (pplToNotify.length > 0)
+                    for (let uid of pplToNotify)
                         await db.collection("Users").doc(uid).get().then(function (docUser) {
                             if (docUser.exists) {
-                                if(docUser.data()["Push Tokens"])
+                                if (docUser.data()["Push Tokens"])
                                     tokens = tokens.concat(docUser.data()["Push Tokens"])
                                 else
-                                    emailErrs.push(req.query.project+" contains a subscriber that has no devices connected to it");
+                                    emailErrs.push(req.query.project + " contains a subscriber that has no devices connected to it");
                             } else {
                                 console.log("No such document!");
-                                emailErrs.push(req.query.project+" contains a subscriber that doesn't exist");
+                                emailErrs.push(req.query.project + " contains a subscriber that doesn't exist");
                             }
-                        }).catch(function(error) {
+                        }).catch(function (error) {
                             console.log("Error getting document:", error);
-                            emailErrs.push(req.query.project+" contains a subscriber that doesn't exist");
+                            emailErrs.push(req.query.project + " contains a subscriber that doesn't exist");
                         });
                 else
-                    emailErrs.push(req.query.project+" has no accounts connected to it");
+                    emailErrs.push(req.query.project + " has no accounts connected to it");
             } else {
                 console.log("No such document!");
-                emailErrs.push(req.query.project+" is not a valid project");
+                emailErrs.push(req.query.project + " is not a valid project");
             }
-        }).catch(function(error) {
+        }).catch(function (error) {
             console.log("Error getting document:", error);
-            emailErrs.push(req.query.project+" is not a valid project");
+            emailErrs.push(req.query.project + " is not a valid project");
         });
     }
 
     let messages = [];
-    for(token of tokens){
+    for (token of tokens) {
         if (!await Expo.isExpoPushToken(token)) {
             tokenErrs.push(`${token} is not a valid push token`)
             console.log(`Push token ${token} is not a valid Expo push token`);
             continue;
         }
-    
-      // Construct a message (see https://docs.expo.io/versions/latest/guides/push-notifications.html)
+
+        // Construct a message (see https://docs.expo.io/versions/latest/guides/push-notifications.html)
 
         var msgObj = {
             to: token,
@@ -130,7 +132,7 @@ let respondToRequest = async (req,res)=>{
             title: title,
             priority: 'high',
             body: req.query.body,
-            data: {data, project:req.query.project},
+            data: { data, project: req.query.project, timestamp },
         }
         messages.push(msgObj)
 
@@ -156,7 +158,7 @@ let respondToRequest = async (req,res)=>{
 
     let receiptIds = [];
     let deliveryErrs = [];
-    
+
     for (let ticket of tickets) {
         // NOTE: Not all tickets have IDs; for example, tickets for notifications
         // that could not be enqueued will have error information and no receipt ID.
@@ -171,7 +173,7 @@ let respondToRequest = async (req,res)=>{
     let total = 0;
     let loops = 0
 
-    while(tokens.length != total||loops>60){
+    while (tokens.length != total || loops > 60) {
         loops++
         for (let chunk of receiptIdChunks) {
             try {
@@ -179,7 +181,7 @@ let respondToRequest = async (req,res)=>{
 
                 // The receipts specify whether Apple or Google successfully received the
                 // notification and information about an error, if one occurred.
-                if(receipts)
+                if (receipts)
                     for (let receiptName in receipts) {
                         receipt = receipts[receiptName]
                         total++;
@@ -206,10 +208,10 @@ let respondToRequest = async (req,res)=>{
         //     await sleep(1000)
     }
 
-    res.json({'# of notifications requested to be sent':tokens.length,'# of notifications sent':success,"# of errors":emailErrs.length+tokenErrs.length+deliveryErrs.length,"Failed Emails/Projects/Accounts":emailErrs,"Non-existant tokens":tokenErrs.length,"Delivery Errors":deliveryErrs});
+    res.json({ '# of notifications requested to be sent': tokens.length, '# of notifications sent': success, "# of errors": emailErrs.length + tokenErrs.length + deliveryErrs.length, "Failed Emails/Projects/Accounts": emailErrs, "Non-existant tokens": tokenErrs.length, "Delivery Errors": deliveryErrs });
 }
 
-app.post('/getProfileInfo', (req,res)=>{
+app.post('/getProfileInfo', (req, res) => {
     console.log(`uid: ${req.body.uid}`)
     admin.auth().getUser(req.body.uid).then((userRecord) => {
         console.log(`Successfully fetched user data: ${userRecord.toJSON()}`);
@@ -219,7 +221,7 @@ app.post('/getProfileInfo', (req,res)=>{
     });
 });
 
-app.post('/getProfileByEmail', (req,res)=>{
+app.post('/getProfileByEmail', (req, res) => {
     console.log(`email: ${req.body.email}`)
     admin.auth().getUserByEmail(req.body.email).then((userRecord) => {
         console.log(`Successfully fetched user data: ${userRecord.toJSON()}`);
@@ -229,24 +231,24 @@ app.post('/getProfileByEmail', (req,res)=>{
     });
 });
 
-app.post('/deleteProject', (req,res)=>{
+app.post('/deleteProject', (req, res) => {
     console.log(`data: ${req.body}`)
     admin.auth().verifyIdToken(req.body.idToken).then((decodedToken) => {
         const uid = decodedToken.uid;
         const project = req.body.project;
-        db.collection("Projects").doc(req.body.project).get().then((doc) =>{
+        db.collection("Projects").doc(req.body.project).get().then((doc) => {
             const deletedValue = doc.data()
-            if(deletedValue[groups[0]].includes(uid)){
+            if (deletedValue[groups[0]] && deletedValue[groups[0]].includes(uid)) {
                 const updates = []
-                for(let groupName of groups)
-                    if(deletedValue[groupName])
-                        for(let uid of deletedValue[groupName]){
+                for (let groupName of groups)
+                    if (deletedValue[groupName])
+                        for (let uid of deletedValue[groupName]) {
                             updates.push(db.collection('Users').doc(uid).update({
-                                'Projects':firebase.firestore.FieldValue.arrayRemove(context.params.projectName)
+                                'Projects': firebase.firestore.FieldValue.arrayRemove(context.params.projectName)
                             }))
                         }
-                Promise.all(updates).then(()=>res.json({status:success}))
-            }else{
+                Promise.all(updates).then(() => res.json({ status: success }))
+            } else {
                 res.status(400).json({ error: `Could not delete` })
             }
         })
@@ -257,8 +259,8 @@ app.post('/deleteProject', (req,res)=>{
 
 
 
-app.get('/',cors({origin:true}),respondToRequest);
-app.post('/',cors({origin:true}),respondToRequest);
+app.get('/', cors({ origin: true }), respondToRequest);
+app.post('/', cors({ origin: true }), respondToRequest);
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
