@@ -77,12 +77,14 @@ let respondToRequest = async (req, res) => {
 
     const timestamp = new Date().getTime()
 
+    const firebaseData = { title, data, timestamp: timestamp, ...(req.query.webhook && {webhook:req.query.webhook}), ...(req.query.webhookParam && {webhookParamName: req.query.webhookParam}) }
+
     if (req.query.project) {
         const projectRef = db.collection("Projects").doc(req.query.project.toLowerCase())
         await projectRef.get().then(async (doc) => {
             if (doc.exists) {
                 projectRef.set({
-                    'Notifications': admin.firestore.FieldValue.arrayUnion({ title, data, timestamp: timestamp, ...(req.query.webhook && {webhook:req.query.webhook}), ...(req.query.webhookParam && {webhookParamName: req.query.webhookParam}) })
+                    'Notifications': admin.firestore.FieldValue.arrayUnion(firebaseData)
                 }, { merge: true })
                 let pplToNotify = []
                 for (let groupName of groups)
@@ -137,7 +139,7 @@ let respondToRequest = async (req, res) => {
             // _category:category,
             _category:`@kihtrakraknas/NotiBot-${category}`,
             body: req.query.body,
-            data: { data, project: req.query.project, timestamp, webhook:req.query.webhook, webhookParamName: req.query.webhookParam},
+            data: { firebaseData, project: req.query.project},
         }
         messages.push(msgObj)
 
