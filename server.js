@@ -178,8 +178,8 @@ let respondToRequest = async (req, res) => {
     let total = 0;
     let loops = 0
 
-    while (tokens.length != total || loops > 60) {
-        loops++
+    // while (tokens.length != total || loops > 60) {
+    //     loops++
         for (let chunk of receiptIdChunks) {
             try {
                 let receipts = await expo.getPushNotificationReceiptsAsync(chunk);
@@ -211,7 +211,7 @@ let respondToRequest = async (req, res) => {
         }
         // if(tokens.length != total)
         //     await sleep(1000)
-    }
+    // }
 
     res.json({ '# of notifications requested to be sent': tokens.length, '# of notifications sent': success, "# of errors": emailErrs.length + tokenErrs.length + deliveryErrs.length, "Failed Emails/Projects/Accounts": emailErrs, "Non-existant tokens": tokenErrs.length, "Delivery Errors": deliveryErrs });
 }
