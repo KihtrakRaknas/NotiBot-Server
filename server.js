@@ -134,7 +134,8 @@ let respondToRequest = async (req, res) => {
             priority: 'high',
             categoryId:category,
             categoryIdentifier:category,
-            _category:`@kihtrakraknas/NotiBot-${category}`,
+            _category:category,
+            // _category:`@kihtrakraknas/NotiBot-${category}`,
             body: req.query.body,
             data: { data, project: req.query.project, timestamp, webhook:req.query.webhook, webhookParamName: req.query.webhookParam},
         }
