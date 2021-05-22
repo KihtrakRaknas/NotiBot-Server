@@ -77,7 +77,7 @@ let respondToRequest = async (req, res) => {
 
     const timestamp = new Date().getTime()
 
-    const firebaseData = { title, data, body:req.query.body, timestamp: timestamp, ...(req.query.webhook && {webhook:req.query.webhook}), ...(req.query.webhookParam && {webhookParamName: req.query.webhookParam}) }
+    const firebaseData = { title, data, body:req.query.body, timestamp: timestamp, ...(req.query.webhook && {webhook:req.query.webhook}), ...(req.query.webhookParam == "true" && {webhookParam: true}) }
 
     if (req.query.project) {
         const projectRef = db.collection("Projects").doc(req.query.project.toLowerCase())
@@ -119,7 +119,7 @@ let respondToRequest = async (req, res) => {
     }
 
     let messages = [];
-    const category = !req.query.project?null:!req.query.webhook?"standard":req.query.webhookParam?"webhooktext":"webhookbutton"
+    const category = !req.query.project?null:!req.query.webhook?"standard":req.query.webhookParam=="true"?"webhooktext":"webhookbutton"
     for (token of tokens) {
         if (!await Expo.isExpoPushToken(token)) {
             tokenErrs.push(`${token} is not a valid push token`)
