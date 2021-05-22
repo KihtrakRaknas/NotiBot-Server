@@ -136,8 +136,8 @@ let respondToRequest = async (req, res) => {
             priority: 'high',
             categoryId:category,
             categoryIdentifier:category,
-            _category:category,
-            // _category:`@kihtrakraknas/NotiBot-${category}`,
+            // _category:category,
+            _category:`@kihtrakraknas/NotiBot-${category}`,
             body: req.query.body,
             data: { firebaseData, project: req.query.project},
         }
