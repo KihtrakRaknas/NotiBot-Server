@@ -42,11 +42,11 @@ let respondToRequest = async (req, res) => {
     let emailErrs = [];
     let tokenErrs = [];
 
-    let data = {}
-    if (req.query.data && JSON.parse(req.query.data))
-        data = JSON.parse(req.query.data)
-    else
-        data = req.body
+    // let data = {}
+    // if (req.query.data && JSON.parse(req.query.data))
+    //     data = JSON.parse(req.query.data)
+    // else
+    //     data = req.body
 
     let title = req.query.title
     if (!title)
@@ -77,7 +77,7 @@ let respondToRequest = async (req, res) => {
 
     const timestamp = new Date().getTime()
 
-    const firebaseData = { title, data, body:req.query.body, timestamp: timestamp, ...(req.query.webhook && {webhook:req.query.webhook}), ...(req.query.webhookParam == "true" && {webhookParam: true}) }
+    const firebaseData = { title, /*data, */body:req.query.body, timestamp: timestamp, ...(req.query.webhook && {webhook:req.query.webhook}), ...(req.query.webhookParam == "true" && {webhookParam: true}) }
 
     if (req.query.project) {
         const projectRef = db.collection("Projects").doc(req.query.project.toLowerCase())
