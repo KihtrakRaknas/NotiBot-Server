@@ -267,6 +267,33 @@ app.post('/deleteProject', (req, res) => {
     });
 });
 
+app.post('/addUserToProject', (req, res) => {
+    console.log(`data: ${req.body}`)
+    admin.auth().verifyIdToken(req.body.idToken).then((decodedToken) => {
+        const callerUid = decodedToken.uid;
+        const { project, uid } = req.body.project;
+        db.collection("Projects").doc(project).get().then((doc) => {
+            const deletedValue = doc.data()
+            if (deletedValue[groups[0]] && deletedValue[groups[0]].includes(callerUid)) { // check if caller is owner of project
+                const updates = []
+                updates.push(db.collection("Projects").doc(project).update({
+                    [groups[2]]: admin.firestore.FieldValue.arrayUnion(uid)
+                }))
+                updates.push(db.collection('Users').doc(uid).update({
+                    'Projects': admin.firestore.FieldValue.arrayUnion(project)
+                }))
+                Promise.all(updates).then(async () => {
+                    res.json({ status: 'success' })
+                })
+            } else {
+                res.status(400).json({ error: `Could not add user` })
+            }
+        })
+    }).catch((error) => {
+        res.status(400).json({ error: `Could not add user` })
+    });
+});
+
 
 
 app.get('/', cors({ origin: true }), respondToRequest);
