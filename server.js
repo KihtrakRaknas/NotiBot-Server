@@ -259,10 +259,11 @@ app.post('/deleteProject', (req, res) => {
                     res.json({ status: 'success' })
                 })
             } else {
-                res.status(400).json({ error: `Could not delete` })
+                res.status(400).json({ error: `Could not delete (you are not the project owner)` })
             }
         })
-    }).catch((error) => {
+    }).catch((error) => {]
+        console.log(error)
         res.status(400).json({ error: `Could not delete` })
     });
 });
@@ -286,10 +287,11 @@ app.post('/addUserToProject', (req, res) => {
                     res.json({ status: 'success' })
                 })
             } else {
-                res.status(400).json({ error: `Could not add user` })
+                res.status(400).json({ error: `Could not add user (you are not the project owner)` })
             }
         })
     }).catch((error) => {
+        console.log(error)
         res.status(400).json({ error: `Could not add user` })
     });
 });
