@@ -272,7 +272,7 @@ app.post('/addUserToProject', (req, res) => {
     console.log(`data: ${req.body}`)
     admin.auth().verifyIdToken(req.body.idToken).then((decodedToken) => {
         const callerUid = decodedToken.uid;
-        const { project, uid } = req.body.project;
+        const { project, uid } = req.body;
         db.collection("Projects").doc(project).get().then((doc) => {
             const deletedValue = doc.data()
             if (deletedValue[groups[0]] && deletedValue[groups[0]].includes(callerUid)) { // check if caller is owner of project
