@@ -256,7 +256,7 @@ app.post('/deleteProject', (req, res) => {
                         }
                 Promise.all(updates).finally(async () => {
                     await db.collection("Projects").doc(project).delete()
-                    res.json({ status: success })
+                    res.json({ status: 'success' })
                 })
             } else {
                 res.status(400).json({ error: `Could not delete` })
