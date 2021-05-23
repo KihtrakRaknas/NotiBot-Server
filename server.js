@@ -262,7 +262,7 @@ app.post('/deleteProject', (req, res) => {
                 res.status(400).json({ error: `Could not delete (you are not the project owner)` })
             }
         })
-    }).catch((error) => {]
+    }).catch((error) => {
         console.log(error)
         res.status(400).json({ error: `Could not delete` })
     });
