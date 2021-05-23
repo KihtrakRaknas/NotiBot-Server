@@ -243,7 +243,7 @@ app.post('/deleteProject', (req, res) => {
     admin.auth().verifyIdToken(req.body.idToken).then((decodedToken) => {
         const uid = decodedToken.uid;
         const project = req.body.project;
-        db.collection("Projects").doc(req.body.project).get().then((doc) => {
+        db.collection("Projects").doc(project).get().then((doc) => {
             const deletedValue = doc.data()
             if (deletedValue[groups[0]] && deletedValue[groups[0]].includes(uid)) {
                 const updates = []
@@ -251,10 +251,13 @@ app.post('/deleteProject', (req, res) => {
                     if (deletedValue[groupName])
                         for (let uid of deletedValue[groupName]) {
                             updates.push(db.collection('Users').doc(uid).update({
-                                'Projects': firebase.firestore.FieldValue.arrayRemove(context.params.projectName)
+                                'Projects': admin.firestore.FieldValue.arrayRemove(project)
                             }))
                         }
-                Promise.all(updates).then(() => res.json({ status: success }))
+                Promise.all(updates).finally(async () => {
+                    await db.collection("Projects").doc(project).delete()
+                    res.json({ status: success })
+                })
             } else {
                 res.status(400).json({ error: `Could not delete` })
             }
