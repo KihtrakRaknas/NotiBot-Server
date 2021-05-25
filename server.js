@@ -77,7 +77,7 @@ let respondToRequest = async (req, res) => {
 
     const timestamp = new Date().getTime()
 
-    const firebaseData = { title, /*data, */body:req.query.body, timestamp: timestamp, ...(req.query.webhook && {webhook:req.query.webhook}), ...(req.query.webhookParam == "true" && {webhookParam: true}) }
+    const firebaseData = { title, /*data, */...(req.query.body && {body: req.query.body}), timestamp: timestamp, ...(req.query.webhook && {webhook:req.query.webhook}), ...(req.query.webhookParam == "true" && {webhookParam: true}) }
 
     if (req.query.project) {
         const projectRef = db.collection("Projects").doc(req.query.project.toLowerCase())
