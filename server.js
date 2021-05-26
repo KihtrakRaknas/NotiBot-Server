@@ -38,6 +38,7 @@ app.listen(PORT, () => console.log(`Listening on ${PORT}`))
 app.use(express.static(__dirname + '/static', { dotfiles: 'allow' }))
 
 let respondToRequest = async (req, res) => {
+    console.log(req.query)
     let tokens = [];
     let emailErrs = [];
     let tokenErrs = [];
