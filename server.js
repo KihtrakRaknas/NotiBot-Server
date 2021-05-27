@@ -39,58 +39,75 @@ app.use(express.static(__dirname + '/static', { dotfiles: 'allow' }))
 
 let respondToRequest = async (req, res) => {
     console.log(req.query)
+
+    let error = null;
     let tokens = [];
-    let emailErrs = [];
-    let tokenErrs = [];
+    let nonCriticalErrors = [];
 
-    // let data = {}
-    // if (req.query.data && JSON.parse(req.query.data))
-    //     data = JSON.parse(req.query.data)
-    // else
-    //     data = req.body
+    // Extract query parameters
+    let { project, title, email } = req.query
 
-    let title = req.query.title
+    // If title is missing, use default value
     if (!title)
-        title = req.query.project
+        title = project
     if (!title)
-        title = req.query.email
+        title = email
 
-    if (req.query.email)
-        await admin.auth().getUserByEmail(req.query.email).then(async (userRecord) => {
+    // Legacy feature. Undocumented
+    if (email)
+        await admin.auth().getUserByEmail(email).then(async (userRecord) => {
             return await db.collection("Users").doc(userRecord.uid).get().then(function (doc) {
                 if (doc.exists) {
                     if (doc.data()["Push Tokens"])
                         tokens = tokens.concat(doc.data()["Push Tokens"])
-                    else
-                        emailErrs.push(req.query.email + " has no devices connected to it");
+                    else {
+                        // console.log(email + " has no devices connected to it");
+                        error = `${email} has no devices connected to it`
+                    }
                 } else {
-                    console.log("No such document!");
-                    emailErrs.push(req.query.email + " is not a valid email");
+                    // console.log("No such document!");
+                    error = `${email} is not a valid email`;
                 }
             }).catch(function (error) {
-                console.log("Error getting document:", error);
-                emailErrs.push(req.query.email + " is not a valid email");
+                // console.log("Error getting document:", error);
+                error = `${email} is not a valid email`;
             });
         }).catch((err) => {
-            console.log(err);
-            emailErrs.push(req.query.email + " is not a valid email");
+            // console.log(err);
+            error = `${email} is not a valid email`;
         })
+    
+    // If getting tokens from an email failed, stop the request
+    if(error)
+        return res.status(400).json({success:!error, error});
 
-    const timestamp = new Date().getTime()
+    let firebaseData = null
 
-    const firebaseData = { title, /*data, */...(req.query.body && {body: req.query.body}), timestamp: timestamp, ...(req.query.webhook && {webhook:req.query.webhook}), ...(req.query.webhookParam == "true" && {webhookParam: true}) }
+    if (project) {
+        const timestamp = new Date().getTime()
 
-    if (req.query.project) {
-        const projectRef = db.collection("Projects").doc(req.query.project.toLowerCase())
+        firebaseData = { 
+            title,
+            timestamp: timestamp, 
+            ...(req.query.body && {body: req.query.body}), 
+            ...(req.query.webhook && {webhook:req.query.webhook}), 
+            ...(req.query.webhookParam == "true" && {webhookParam: true}) 
+        }
+
+        const projectRef = db.collection("Projects").doc(project.toLowerCase())
         await projectRef.get().then(async (doc) => {
             if (doc.exists) {
                 projectRef.set({
                     'Notifications': admin.firestore.FieldValue.arrayUnion(firebaseData)
                 }, { merge: true })
+
+                // get all members of a project
                 let pplToNotify = []
                 for (let groupName of groups)
                     if (doc.data()[groupName])
                         pplToNotify = [...pplToNotify, ...doc.data()[groupName]]
+
+                // loop through the accounts and retrieve their push tokens
                 if (pplToNotify.length > 0)
                     for (let uid of pplToNotify)
                         await db.collection("Users").doc(uid).get().then(function (docUser) {
@@ -98,32 +115,39 @@ let respondToRequest = async (req, res) => {
                                 if (docUser.data()["Push Tokens"])
                                     tokens = tokens.concat(docUser.data()["Push Tokens"])
                                 else
-                                    emailErrs.push(req.query.project + " contains a subscriber that has no devices connected to it");
+                                    nonCriticalErrors.push(`${project} contains a subscriber that doesn't exist`);
                             } else {
                                 console.log("No such document!");
-                                emailErrs.push(req.query.project + " contains a subscriber that doesn't exist");
+                                nonCriticalErrors.push(`${project} contains a subscriber that doesn't exist`);
                             }
                         }).catch(function (error) {
                             console.log("Error getting document:", error);
-                            emailErrs.push(req.query.project + " contains a subscriber that doesn't exist");
+                            nonCriticalErrors.push(`${project} contains a subscriber that doesn't exist`);
                         });
                 else
-                    emailErrs.push(req.query.project + " has no accounts connected to it");
+                    error = `${project} has no accounts connected to it`;
             } else {
                 console.log("No such document!");
-                emailErrs.push(req.query.project + " is not a valid project");
+                error = `${project} is not a valid project`;
             }
         }).catch(function (error) {
             console.log("Error getting document:", error);
-            emailErrs.push(req.query.project + " is not a valid project");
+            error = `${project} is not a valid project`;
         });
     }
 
+    // If getting tokens for a project failed, stop the request
+    if(error)
+        return res.status(400).json({success:!error, error});
+
+    // Choose the category a notification will be in. The category controls which notification actions appear with the notification.
+    const category = !project?null:!req.query.webhook?"standard":req.query.webhookParam=="true"?"webhooktext":"webhookbutton"
+
     let messages = [];
-    const category = !req.query.project?null:!req.query.webhook?"standard":req.query.webhookParam=="true"?"webhooktext":"webhookbutton"
+    
     for (token of tokens) {
         if (!await Expo.isExpoPushToken(token)) {
-            tokenErrs.push(`${token} is not a valid push token`)
+            nonCriticalErrors.push(`${token} is not a valid push token`)
             console.log(`Push token ${token} is not a valid Expo push token`);
             continue;
         }
@@ -140,17 +164,14 @@ let respondToRequest = async (req, res) => {
             // _category:category,
             _category:`@kihtrakraknas/NotiBot-${category}`,
             body: req.query.body,
-            data: { firebaseData, project: req.query.project},
+            data: { firebaseData, project},
         }
         messages.push(msgObj)
-
-        //console.log(msgObj)
+        
     }
+
     let chunks = await expo.chunkPushNotifications(messages);
     let tickets = [];
-    // Send the chunks to the Expo push notification service. There are
-    // different strategies you could use. A simple one is to send one chunk at a
-    // time, which nicely spreads the load out over time:
     for (let chunk of chunks) {
         try {
             let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
@@ -160,9 +181,13 @@ let respondToRequest = async (req, res) => {
             // documentation:
             // https://docs.expo.io/versions/latest/guides/push-notifications#response-format
         } catch (error) {
+            error = error;
             console.error(error);
         }
     }
+
+    if(error)
+        return res.status(400).json({success:!error, error});
 
     let receiptIds = [];
     let deliveryErrs = [];
@@ -177,46 +202,46 @@ let respondToRequest = async (req, res) => {
 
     let receiptIdChunks = await expo.chunkPushNotificationReceiptIds(receiptIds);
 
-    let success = 0
-    let total = 0;
-    let loops = 0
+    let totalSuccessfullySent = 0
+    let totalSent = 0;
 
-    // while (tokens.length != total || loops > 60) {
-    //     loops++
-        for (let chunk of receiptIdChunks) {
-            try {
-                let receipts = await expo.getPushNotificationReceiptsAsync(chunk);
+    for (let chunk of receiptIdChunks) {
+        try {
+            let receipts = await expo.getPushNotificationReceiptsAsync(chunk);
 
-                // The receipts specify whether Apple or Google successfully received the
-                // notification and information about an error, if one occurred.
-                if (receipts)
-                    for (let receiptName in receipts) {
-                        receipt = receipts[receiptName]
-                        total++;
+            // The receipts specify whether Apple or Google successfully received the
+            // notification and information about an error, if one occurred.
+            if (receipts)
+                for (let receiptName in receipts) {
+                    receipt = receipts[receiptName]
+                    total++;
 
-                        if (receipt.status === 'ok') {
-                            success++
-                            continue;
-                        } else if (receipt.status === 'error') {
-                            console.error(`There was an error sending a notification: ${receipt.message}`);
-                            if (receipt.details && receipt.details.error) {
-                                // The error codes are listed in the Expo documentation:
-                                // https://docs.expo.io/versions/latest/guides/push-notifications#response-format
-                                // You must handle the errors appropriately.
-                                console.error(`The error code is ${receipt.details.error}`);
-                                deliveryErrs.push(`${receipt.details.error} - ${receipt.message}`)
-                            }
+                    if (receipt.status === 'ok') {
+                        success++
+                        continue;
+                    } else if (receipt.status === 'error') {
+                        console.error(`There was an error sending a notification: ${receipt.message}`);
+                        if (receipt.details && receipt.details.error) {
+                            // The error codes are listed in the Expo documentation:
+                            // https://docs.expo.io/versions/latest/guides/push-notifications#response-format
+                            // You must handle the errors appropriately.
+                            console.error(`The error code is ${receipt.details.error}`);
+                            nonCriticalErrors.push(`${receipt.details.error} - ${receipt.message}`)
                         }
                     }
-            } catch (error) {
-                console.error(error);
-            }
+                }
+        } catch (error) {
+            console.error(error);
         }
-        // if(tokens.length != total)
-        //     await sleep(1000)
-    // }
+    }
 
-    res.json({ '# of notifications requested to be sent': tokens.length, '# of notifications sent': success, "# of errors": emailErrs.length + tokenErrs.length + deliveryErrs.length, "Failed Emails/Projects/Accounts": emailErrs, "Non-existant tokens": tokenErrs.length, "Delivery Errors": deliveryErrs });
+    res.json({ 
+        success:!error,
+        error,
+        'notificationsSent': totalSent, 
+        'notificationsSentSuccessfully': totalSuccessfullySent, 
+        nonCriticalErrors
+    });
 }
 
 app.post('/getProfileInfo', (req, res) => {
