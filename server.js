@@ -190,7 +190,6 @@ let respondToRequest = async (req, res) => {
         return res.status(400).json({success:!error, error});
 
     let receiptIds = [];
-    let deliveryErrs = [];
 
     for (let ticket of tickets) {
         // NOTE: Not all tickets have IDs; for example, tickets for notifications
@@ -214,10 +213,10 @@ let respondToRequest = async (req, res) => {
             if (receipts)
                 for (let receiptName in receipts) {
                     receipt = receipts[receiptName]
-                    total++;
+                    totalSent++;
 
                     if (receipt.status === 'ok') {
-                        success++
+                        totalSuccessfullySent++
                         continue;
                     } else if (receipt.status === 'error') {
                         console.error(`There was an error sending a notification: ${receipt.message}`);
@@ -231,9 +230,13 @@ let respondToRequest = async (req, res) => {
                     }
                 }
         } catch (error) {
+            error = error;
             console.error(error);
         }
     }
+
+    if(error)
+        return res.status(400).json({success:!error, error});
 
     res.json({ 
         success:!error,
