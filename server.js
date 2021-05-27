@@ -79,7 +79,7 @@ let respondToRequest = async (req, res) => {
     
     // If getting tokens from an email failed, stop the request
     if(error)
-        return res.status(400).json({success:!error, error});
+        return res.status(400).json({success:!error, error, nonCriticalErrors});
 
     let firebaseData = null
 
@@ -138,7 +138,7 @@ let respondToRequest = async (req, res) => {
 
     // If getting tokens for a project failed, stop the request
     if(error)
-        return res.status(400).json({success:!error, error});
+        return res.status(400).json({success:!error, error, nonCriticalErrors});
 
     // Choose the category a notification will be in. The category controls which notification actions appear with the notification.
     const category = !project?null:!req.query.webhook?"standard":req.query.webhookParam=="true"?"webhooktext":"webhookbutton"
@@ -187,7 +187,7 @@ let respondToRequest = async (req, res) => {
     }
 
     if(error)
-        return res.status(400).json({success:!error, error});
+        return res.status(400).json({success:!error, error, nonCriticalErrors});
 
     let receiptIds = [];
 
@@ -236,7 +236,7 @@ let respondToRequest = async (req, res) => {
     }
 
     if(error)
-        return res.status(400).json({success:!error, error});
+        return res.status(400).json({success:!error, error, nonCriticalErrors});
 
     res.json({ 
         success:!error,
