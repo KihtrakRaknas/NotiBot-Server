@@ -94,7 +94,7 @@ let respondToRequest = async (req, res) => {
             ...(req.query.webhookParam == "true" && {webhookParam: true}) 
         }
 
-        const projectRef = db.collection("Projects").doc(project.toLowerCase())
+        const projectRef = db.collection("Projects").doc(project.toUpperCase())
         await projectRef.get().then(async (doc) => {
             if (doc.exists) {
                 projectRef.set({
