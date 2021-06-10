@@ -47,6 +47,8 @@ let respondToRequest = async (req, res) => {
     // Extract query parameters
     let { project, title, email } = req.query
 
+    project = project.toUpperCase()
+
     // If title is missing, use default value
     if (!title)
         title = project
@@ -94,7 +96,7 @@ let respondToRequest = async (req, res) => {
             ...(req.query.webhookParam == "true" && {webhookParam: true}) 
         }
 
-        const projectRef = db.collection("Projects").doc(project.toUpperCase())
+        const projectRef = db.collection("Projects").doc(project)
         await projectRef.get().then(async (doc) => {
             if (doc.exists) {
                 projectRef.set({
