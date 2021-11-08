@@ -8,7 +8,7 @@ var serviceAccount;
 const cors = require('cors')
 
 const corsOptions = {
-    origin: ['http://localhost:19006', 'https://notibot-server.herokuapp.com'],
+    origin: ['http://localhost:19006', 'https://notibot-server.herokuapp.com', "https://notibot.kihtrak.com"],
     optionsSuccessStatus: 200
 }
 
