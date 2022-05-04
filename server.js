@@ -29,8 +29,9 @@ admin.initializeApp({
 const db = admin.firestore();
 
 var app = express();
+app.set("query parser", "simple");
 app.use(bodyParser.urlencoded({
-    extended: true
+    extended: false
 }));
 app.use(bodyParser.json());
 app.use(cors(corsOptions))
