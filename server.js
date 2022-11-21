@@ -47,8 +47,11 @@ let respondToRequest = async (req, res) => {
 
     // Extract query parameters
     let { project, title, email } = req.query
-
-    project = project?.toUpperCase()
+    
+    if(typeof project === "string")
+        project = project.toUpperCase()
+    else
+        project = null
 
     // If title is missing, use default value
     if (!title)
