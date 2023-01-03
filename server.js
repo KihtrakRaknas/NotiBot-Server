@@ -366,10 +366,11 @@ app.post('/deleteProfile', (req, res) => {
         uid = decodedToken.uid;
         return db.collection('Users').doc(uid).get()
     })
-    .then((doc) => {
+    .then(async (doc) => {
         const userDoc = doc.data()
         const numOfProj = userDoc?.Projects?.length
         if(!numOfProj) {
+            await db.collection("Users").doc(uid).delete()
             admin.auth().deleteUser(uid)
             res.json({ status: 'success' })
         }else{
