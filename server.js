@@ -359,7 +359,27 @@ app.post('/removeUserFromProject', (req, res) => {
     });
 });
 
-
+app.post('/deleteProfile', (req, res) => {
+    console.log(`data: ${JSON.stringify(req.body)}`)
+    let uid
+    admin.auth().verifyIdToken(req.body.idToken).then((decodedToken) => {
+        uid = decodedToken.uid;
+        return db.collection('Users').doc(uid).get()
+    })
+    .then((doc) => {
+        const userDoc = doc.data()
+        const numOfProj = userDoc?.Projects?.length
+        if(!numOfProj) {
+            admin.auth().deleteUser(uid)
+            res.json({ status: 'success' })
+        }else{
+            res.status(400).json({ error: `Could not delete profile (you are still a member of ${numOfProj} projects)` })
+        }
+    }).catch((error) => {
+        console.log(error)
+        res.status(400).json({ error: `Could not delete user` })
+    });
+});
 
 app.get('/', cors({ origin: true }), respondToRequest);
 app.post('/', cors({ origin: true }), respondToRequest);
