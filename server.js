@@ -2,6 +2,7 @@ const { Expo } = require('expo-server-sdk')
 var admin = require('firebase-admin');
 const express = require('express');
 const bodyParser = require('body-parser');
+const crypto = require('crypto');
 const PORT = process.env.PORT || 5000
 var serviceAccount;
 
@@ -103,6 +104,12 @@ let respondToRequest = async (req, res) => {
         const projectRef = db.collection("Projects").doc(project)
         await projectRef.get().then(async (doc) => {
             if (doc.exists) {
+                const projectKey = doc.data()["APIKey"]
+                if(projectKey && req.query.key !== projectKey) {
+                    error = req.query.key ? `Invalid API key` : `API key required`
+                    return
+                }
+
                 projectRef.set({
                     'Notifications': admin.firestore.FieldValue.arrayUnion(firebaseData)
                 }, { merge: true })
@@ -300,6 +307,29 @@ app.post('/deleteProject', (req, res) => {
     }).catch((error) => {
         console.log(error)
         res.status(400).json({ error: `Could not delete` })
+    });
+});
+
+app.post('/addAPIKey', (req, res) => {
+    console.log(`data: ${req.body}`)
+    admin.auth().verifyIdToken(req.body.idToken).then((decodedToken) => {
+        const uid = decodedToken.uid;
+        const project = req.body.project;
+        db.collection("Projects").doc(project).get().then(async (doc) => {
+            const data = doc.data()
+            if (data[groups[0]] && data[groups[0]].includes(uid)) {
+                const newKey = crypto.randomBytes(32).toString('hex');
+                await db.collection("Projects").doc(project).update({
+                    APIKey: newKey
+                })
+                res.json({ status: 'success' })
+            } else {
+                res.status(400).json({ error: `Could not add API key (you are not the project owner)` })
+            }
+        })
+    }).catch((error) => {
+        console.log(error)
+        res.status(400).json({ error: `Could not add API key` })
     });
 });
 
