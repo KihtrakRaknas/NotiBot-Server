@@ -19,5 +19,5 @@ jobs:
       - name: Push to dokku
         uses: dokku/github-action@master
         with:
-          git_remote_url: 'ssh://dokku@5.161.84.125:22/notibot'
+          git_remote_url: 'ssh://dokku@box.kihtrak.com:22/notibot'
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
