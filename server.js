@@ -113,6 +113,28 @@ let respondToRequest = async (req, res) => {
                 projectRef.set({
                     'Notifications': admin.firestore.FieldValue.arrayUnion(firebaseData)
                 }, { merge: true })
+                .catch(async (err) => {
+                    // Seeing this error in projects with 5000+ notifications
+                    const isSizeError = err.code === 3;
+                    const isSizeMessage = err.message && err.message.includes('exceeds the maximum allowed size');
+
+                    if (!isSizeError || !isSizeMessage) throw err;
+
+                    return db.runTransaction(async (transaction) => {
+                        const snapshot = await transaction.get(projectRef);
+                        const existing = snapshot.exists && Array.isArray(snapshot.data().Notifications)
+                            ? snapshot.data().Notifications
+                            : [];
+                        const dropCount = getDropCount(existing.length);
+                        const trimmed = existing.slice(dropCount);
+
+                        trimmed.push(firebaseData);
+                        transaction.set(projectRef, { Notifications: trimmed }, { merge: true });
+                    });
+                })
+                .catch((err) => {
+                    console.error('Firestore notification write failed:', err);
+                });
 
                 // get all members of a project
                 let pplToNotify = []
@@ -414,6 +436,12 @@ app.post('/deleteProfile', (req, res) => {
 
 app.get('/', cors({ origin: true }), respondToRequest);
 app.post('/', cors({ origin: true }), respondToRequest);
+
+const getDropCount = (length) => {
+    if (length < 1) return 0;
+    const magnitude = Math.floor(Math.log10(length));
+    return Math.max(1, Math.pow(10, magnitude));
+};
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
